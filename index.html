@@ -203,6 +203,9 @@
     font-family:"Consolas","Courier New",monospace; font-size:10px; color:#6f9a7d; max-height:56px; overflow-y:auto}
   /* ---- Sub-cajas apiladas (pseudocodigo / estadisticas / explicacion) --- */
   .caja-sub{border-top:1px dashed var(--verde2); margin-top:8px; padding-top:8px}
+  /* Envoltorio para tablas mas anchas que su panel: scrollean solas en vez
+     de que se corte la ultima columna sin aviso. */
+  .tabla-ancha{overflow-x:auto; max-width:100%}
   .caja-sub-titulo{color:var(--verde2); font-size:11px; text-transform:uppercase;
     letter-spacing:.5px; display:block; margin-bottom:4px}
   .stats-grid-b{display:grid; grid-template-columns:1fr 1fr; gap:6px}
@@ -494,6 +497,16 @@
         <span><span class="sw" style="background:#c9c46a"></span><b>Arrastrado</b> &middot; 1 celda cada 7 turnos &middot; <b>2 golpes</b></span>
         <span style="color:#8fae9b">Las barritas verdes sobre la cabeza son la vida que le queda.</span>
       </div>
+      <!-- Arranca OCULTA: solo se muestra cuando se pulsa "Ver estadisticas"
+           en la pestana LOTE. Antes estaba siempre visible con un cartel de
+           "todavia no ejecutaste nada", que ocupaba lugar sin decir nada. -->
+      <div class="caja oculto" id="b-caja-lote" style="margin-top:8px">
+        <div style="display:flex; align-items:center; justify-content:space-between">
+          <h3 style="margin:0">Banco de pruebas &middot; tabla de la Parte IV</h3>
+          <button id="b-btn-cerrar-lote" title="Ocultar las estadisticas">&#10005; Ocultar</button>
+        </div>
+        <div id="b-tabla-lote"></div>
+      </div>
       <div class="pista" style="padding:0 4px">
         Laberinto de 7x9 salas (grilla fina de <span id="b-txt-dims"></span> celdas), generado con
         <b>recursive backtracker</b>. Los zombis entran por la derecha y caminan solos hacia la
@@ -604,7 +617,7 @@
             acierte de casualidad-, por eso la medicion honesta es sobre varios. Cada escenario usa una
             semilla distinta, pero LA MISMA para los tres algoritmos.</div>
           <div class="fila">
-            <button id="b-btn-lote">&#9654; Correr banco</button>
+            <button id="b-btn-lote">&#128202; Ver estadisticas</button>
             <select id="b-sel-num-escenarios">
               <option value="5" selected>5</option>
               <option value="10">10</option>
@@ -612,7 +625,8 @@
             </select>
           </div>
           <div id="b-estado-lote" class="pista" style="color:var(--verde)"></div>
-          <div id="b-tabla-lote"><span class="pista">Aun no se ha ejecutado el banco de pruebas.</span></div>
+          <div class="pista" style="margin-top:6px">Corre el banco y muestra la tabla <b>debajo del
+            tablero</b> (tiene 8 columnas y aca no entra sin cortarse). Se puede volver a ocultar.</div>
         </div>
       </div>
     </div>
@@ -4860,7 +4874,7 @@ function bCorrerLos3(){
      Optimo = si ese costo empata con el minimo real, calculado aparte con Dijkstra */
   var escUno = bEscenarioDeComparacion();
   var optimo = bCostoOptimo(escUno);
-  var h = '<table><tr><th class="izq">Agente</th><th>Exp.</th><th>Costo</th><th>Pasos</th>' +
+  var h = '<div class="tabla-ancha"><table><tr><th class="izq">Agente</th><th>Exp.</th><th>Costo</th><th>Pasos</th>' +
           '<th>Mem.</th><th>Optimo</th></tr>';
   var mejorExp = Infinity, j;
   var res1 = [];
@@ -4880,7 +4894,7 @@ function bCorrerLos3(){
          (r1.optimo ? '<b style="color:var(--verde)">SI</b>'
                     : '<b style="color:var(--rojo)">NO (+' + (r1.costo - optimo) + ')</b>') + '</td></tr>';
   }
-  h += '</table><div class="pista" style="margin-top:6px">Una sola busqueda sobre el mapa actual. El' +
+  h += '</table></div><div class="pista" style="margin-top:6px">Una sola busqueda sobre el mapa actual. El' +
        ' minimo real es <b>' + optimo + '</b> pasos (calculado aparte con Dijkstra, no con ninguno de los' +
        ' tres). Resaltado = el que expandio menos nodos. <b>Costo y Pasos coinciden siempre</b> porque en' +
        ' este laberinto cada movimiento cuesta 1: son columnas distintas igual, porque con terreno de' +
@@ -4889,7 +4903,7 @@ function bCorrerLos3(){
   /* TABLA 2: la noche entera. Responde otra pregunta -no "cuanto cuesta
      UNA busqueda" sino "quien sobrevive"- y por eso van las dos. */
   h += '<div class="pista" style="margin-top:10px"><b>Y ahora la noche entera</b></div>';
-  h += '<table style="margin-top:4px"><tr><th class="izq">Agente</th><th>Resultado</th><th>Elimino</th><th>Se colaron</th><th>Nodos</th></tr>';
+  h += '<div class="tabla-ancha"><table style="margin-top:4px"><tr><th class="izq">Agente</th><th>Resultado</th><th>Elimino</th><th>Se colaron</th><th>Nodos</th></tr>';
   var sobrevivieron = [];
   for (var i = 0; i < algoritmos.length; i++){
     var c = bCrearCaceria(busqueda.escenario.semilla);
@@ -4901,7 +4915,7 @@ function bCorrerLos3(){
     h += '<tr><td class="izq">' + NOMBRE_ALGORITMO[algoritmos[i]] + '</td><td>' + res + '</td><td>' +
          c.eliminados + '</td><td>' + c.escapados + '</td><td>' + c.nodosAcumulados + '</td></tr>';
   }
-  h += '</table>';
+  h += '</table></div>';
   var nota = "Una noche completa (" + bCrearCaceria(busqueda.escenario.semilla).turnosDeLaNoche +
              " turnos, 3 vidas), mismo laberinto y mismas apariciones para los 3 (semilla " +
              busqueda.escenario.semilla + "): lo unico que cambia es como busca el jardinero.";
@@ -4962,7 +4976,7 @@ function bEjecutarLote(){
 
   $("b-estado-lote").innerHTML = "Listo: " + n + " mapas &times; 3 algoritmos = " + (n * 3) + " busquedas.";
 
-  var h = '<table style="margin-top:6px"><tr><th class="izq">Algoritmo</th><th>Exp. media</th>' +
+  var h = '<div class="tabla-ancha"><table style="margin-top:6px"><tr><th class="izq">Algoritmo</th><th>Exp. media</th>' +
           '<th>Costo medio</th><th>Pasos</th><th>Mem. media</th><th>% optimo</th><th>ms</th><th>Victorias</th></tr>';
   for (a = 0; a < algoritmos.length; a++){
     var ac2 = acum[algoritmos[a]];
@@ -4972,7 +4986,7 @@ function bEjecutarLote(){
     h += '<td>' + promedio(ac2.pasos).toFixed(1) + '</td><td>' + promedio(ac2.mem).toFixed(1) + '</td>';
     h += '<td>' + pct + '%</td><td>' + promedio(ac2.ms).toFixed(3) + '</td><td>' + ac2.victorias + '</td></tr>';
   }
-  h += '</table>';
+  h += '</table></div>';
 
   /* BARRAS: la tabla sola cuesta de leer de un vistazo. Cada barra se
      escala contra el PEOR de los tres, asi la mas larga siempre llena el
@@ -5013,7 +5027,7 @@ function bEjecutarLote(){
      que poder mostrar que en CADA mapa pasa lo mismo, no que un mapa raro
      arrastra la media-. */
   h += '<div class="pista" style="margin-top:10px"><b>Detalle mapa por mapa</b></div>';
-  h += '<table style="margin-top:4px"><tr><th>Mapa</th><th>Semilla</th><th class="izq">Algoritmo</th>' +
+  h += '<div class="tabla-ancha"><table style="margin-top:4px"><tr><th>Mapa</th><th>Semilla</th><th class="izq">Algoritmo</th>' +
        '<th>Exp.</th><th>Costo</th><th>Pasos</th><th>Mem.</th><th>Optimo</th></tr>';
   for (i = 0; i < detalle.length; i++){
     var dd = detalle[i];
@@ -5027,9 +5041,14 @@ function bEjecutarLote(){
                                : '<b style="color:var(--rojo)">NO (+' + (v2.costo - dd.optimo) + ')</b>') + '</td></tr>';
     }
   }
-  h += '</table><div class="pista" style="margin-top:6px">Resaltado = el que gano ese mapa (menos nodos' +
+  h += '</table></div><div class="pista" style="margin-top:6px">Resaltado = el que gano ese mapa (menos nodos' +
        ' expandidos). El minimo real de cada mapa se calcula aparte con Dijkstra.</div>';
   $("b-tabla-lote").innerHTML = h;
+  /* Recien aca aparece la caja, y se lleva la vista hasta ella: esta debajo
+     del tablero, asi que sin el scroll el resultado queda fuera de pantalla
+     y parece que el boton no hizo nada. */
+  $("b-caja-lote").classList.remove("oculto");
+  $("b-caja-lote").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 /* Los addEventListener de estos botones se conectan mas abajo, en
@@ -5886,6 +5905,9 @@ $("b-btn-reiniciar").addEventListener("click", bReiniciar);
 $("b-btn-ver-mapa").addEventListener("click", bVerMapa);
 $("b-btn-los3").addEventListener("click", bCorrerLos3);
 $("b-btn-lote").addEventListener("click", bEjecutarLote);
+$("b-btn-cerrar-lote").addEventListener("click", function(){
+  $("b-caja-lote").classList.add("oculto");
+});
 $("b-btn-alg-dfs").addEventListener("click", function(){ bSeleccionarAlgoritmo("dfs"); });
 $("b-btn-alg-bfs").addEventListener("click", function(){ bSeleccionarAlgoritmo("bfs"); });
 $("b-btn-alg-astar").addEventListener("click", function(){ bSeleccionarAlgoritmo("astar"); });
